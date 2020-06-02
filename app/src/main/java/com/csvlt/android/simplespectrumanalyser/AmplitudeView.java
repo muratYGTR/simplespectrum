@@ -1,6 +1,7 @@
 package com.csvlt.android.simplespectrumanalyser;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -23,9 +24,9 @@ import java.util.Random;
 public class AmplitudeView extends View {
 
     static final String TAG = "AmplitudeView";
-    static final int INTERVAL = 50;
-    static final int MAX_DATA_POINTS = 500;
-    static final int CURSOR_COLOUR = Color.GREEN;
+    private int mInterval;
+    private int mMaxDataPoints;
+    static final int CURSOR_COLOUR = Color.BLACK;
 
     private Recorder mAudioRecord;
 
@@ -34,7 +35,7 @@ public class AmplitudeView extends View {
     Handler mHandler;
     Runnable mRunnable;
     private Paint mPaint;
-    private int[] mAmplitudes = new int[MAX_DATA_POINTS];
+    private int[] mAmplitudes;
     private Shader mShader;
 
     private Normaliser mNormaliser;
@@ -43,20 +44,31 @@ public class AmplitudeView extends View {
 
     public AmplitudeView(Context context) {
         super(context);
-        init();
+        init(context, null, 0);
     }
 
     public AmplitudeView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context, attrs, 0);
     }
 
     public AmplitudeView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init();
+        init(context, attrs, defStyle);
     }
 
-    private void init() {
+    private void init(Context context, AttributeSet attrs, int defStyle) {
+
+        final TypedArray a = getContext().obtainStyledAttributes(
+                attrs, R.styleable.AmplitudeView, defStyle, 0);
+
+        mMaxDataPoints = a.getInt(R.styleable.AmplitudeView_maxDataPoints, 750);
+
+        mAmplitudes = new int[mMaxDataPoints];
+
+        mInterval = a.getInt(R.styleable.AmplitudeView_recordInterval, 30);
+
+
         mRandom = new Random();
         mPos = 0;
         mPaint = new Paint();
@@ -80,7 +92,7 @@ public class AmplitudeView extends View {
                         mNormaliser.height = viewHeight;
                     }
                     if (mBandSize == 0) {
-                        mBandSize = viewWidth / (float) MAX_DATA_POINTS;
+                        mBandSize = viewWidth / (float) mMaxDataPoints;
                     }
                     if (mShader == null) {
                         int[] gradientColours = new int[] {Color.RED, Color.YELLOW, Color.GREEN };
@@ -102,9 +114,9 @@ public class AmplitudeView extends View {
                     mAudioRecord.read();
                 }
                 invalidate();
-                mHandler.postDelayed(this, INTERVAL);
+                mHandler.postDelayed(this, mInterval);
                 mPos += 1;
-                mPos %= MAX_DATA_POINTS;
+                mPos %= mMaxDataPoints;
             }
         };
     }
@@ -132,7 +144,7 @@ public class AmplitudeView extends View {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         startAudioRecord();
-        mHandler.postDelayed(mRunnable, INTERVAL);
+        mHandler.postDelayed(mRunnable, mInterval);
     }
 
     @Override
@@ -150,7 +162,7 @@ public class AmplitudeView extends View {
             mAmplitudes[mPos] = normalisedAmplitude;
 
             mPaint.setShader(mShader);
-            for (int i=0; i<MAX_DATA_POINTS; i++) {
+            for (int i=0; i< mMaxDataPoints; i++) {
                 canvas.drawRect(i* mBandSize, mNormaliser.height-mAmplitudes[i], i* mBandSize + mBandSize, mNormaliser.height, mPaint);
             }
 

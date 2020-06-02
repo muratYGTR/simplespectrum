@@ -1,0 +1,6 @@
+<resources>
+    <declare-styleable name="AmplitudeView">
+        <attr name="recordInterval" format="integer" />
+        <attr name="maxDataPoints" format="integer" />
+    </declare-styleable>
+</resources>
